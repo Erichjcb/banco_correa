@@ -19,29 +19,55 @@
         </button>
     </form>
     <?php 
-        session_start(); //Inicia la Sesion LOL
-        $contador_intentos = 0; //contador de intentos de inisio de seccion :SillyDev:
-        $usuario = isset($_POST['UsuarioNombre']) ? $_POST['UsuarioNombre'] : ''; //para identificar por el nombre del input
-        $contra = isset($_POST['UsuarioContra']) ? $_POST['UsuarioContra'] : '';
-        $mensaje = false;
-        $usuarioLogueado = null;
-        if(($usuario == '' || $contra == '') && $contador_intentos < 1) {
-            
+//iniciamos el almacenamiento de sesion solo si no ha sido activado previamente
+if(session_status() === PHP_SESSION_NONE){
+    session_start();
+}
+//importamos la clase de conexion a la base de datos de forma segura
+require_once '../config/conexion.php';
+//inicializamos variables de control y resultado de autenticacion
+$mensaje = false;
+$usuarioLogueado = null;
+
+//evaluamos si la peticion entrante fue enviada mediante el metodo POST
+if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    //limpiamos y asignamos las credenciales enviadas desde el formulario
+    $usuario = trim($_POST['UsuarioNombre'] ?? '');
+    $contra = trim($_POST['UsuarioContra'] ?? '');
+
+    //validamos que los campos obligatorios no esten vacios
+    if(!empty($usuario) && !empty($contra)){
+        //obtenemos el enlace activo con la base de datos MySQL
+        $db = Database::conectar();
+        //preparamos la sentencia SQL parametrizada para prevenir inyecciones SQL
+        $stmt = $db->prepare("SELECT id, usuario, password, saldo FROM usuarios WHERE usuario = ? LIMIT 1");
+        //asociamos el parametro de texto ingresado por el usuario
+        $stmt->bind_param("s", $usuario);
+        //ejecutamos la sentencia preparada en el motor de base de datos
+        $stmt->execute();
+        //obtenemos el conjunto de resultados retornado por la consulta
+        $resultado = $stmt->get_result();
+        //convertimos el primer registro encontrado en un arreglo asociativo
+        $fila = $resultado->fetch_assoc();
+
+        //verificamos si el usuario existe y si su clave coincide (soporta password_hash o texto plano)
+        if($fila && (password_verify($contra, $fila['password']) || $contra === $fila['password'])){
+            //guardamos los datos esenciales del usuario en la sesion actual
+            $_SESSION['id_usuario'] = $fila['id'];
+            $_SESSION['UsuarioNombre'] = $fila['usuario'];
+            //asignamos los datos obtenidos a la variable de vista
+            $usuarioLogueado = $fila;
+        }else{
+            //marcamos la bandera de error si las credenciales fallan
+            $mensaje = true;
         }
-        else{
-            require_once '../config/conexion.php'; // "importamos" el database.php
-            $db = Database::conectar(); //conectamos
-            $sql = "SELECT * FROM usuarios WHERE usuario = '$usuario' AND password = '$contra'"; 
-            #Consulta para el sql :SillyDev:
-            $usuarioLogueado = $db->query($sql)->fetch_assoc(); //Convierte en "lista" el resultado de la consulta
-            if(isset($usuarioLogueado['usuario']) == '' && isset($usuarioLogueado['password']) == ''){
-                $mensaje = true; //si nombre de usuario y contraseña no existen dentro de db, entonces son credenciales incorrectas :SillyDev:
-            }
-            else{
-                $_SESSION['UsuarioNombre'] = $usuarioLogueado['usuario'];
-                $_SESSION['UsuarioContra'] = $usuarioLogueado['password'];
-            }
-        }
+        //cerramos la consulta preparada para liberar recursos del servidor
+        $stmt->close();
+    }else{
+        //si envio campos vacios se activa la alerta de error
+        $mensaje = true;
+    }
+}
         if ($mensaje): ?>
         <div class="alert alert-info"><?= "Ingrese correctamente sus credenciales" ?></div>
         <?php endif; ?>
