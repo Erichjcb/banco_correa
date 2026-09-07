@@ -13,6 +13,7 @@ $accion = isset($_GET['accion'])
 $controlador = new BancoController();
 ?>
 <?php include 'views/partials/header.php'; ?>
+<!--Mismo texto codigo de nav, pero diferentes direccions para enlansar con las vistas.-->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
     <a class="navbar-brand" href="index.php">Banco Correa</a>
