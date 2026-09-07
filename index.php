@@ -11,7 +11,7 @@ $accion = isset($_GET['accion'])
 
 
 $controlador = new BancoController();
-
+include 'views/inicio.php'; //mostrar la interfaz de una ves en el inicio.php
 
 switch ($accion) {
 
@@ -33,13 +33,13 @@ switch ($accion) {
 
         echo "Bienvenido al Sistema Bancario.<br><br>";
 
-        echo "Pruebas disponibles:<br>";
+        //echo "Pruebas disponibles:<br>";
 
-        echo "Login:<br>";
-        echo "?accion=login&u=admin&p=1234<br><br>";
+        //echo "Login:<br>";
+        //echo "?accion=login&u=admin&p=1234<br><br>";
 
-        echo "Retiro:<br>";
-        echo "?accion=retiro&monto=200<br>";
+        //echo "Retiro:<br>";
+        //echo "?accion=retiro&monto=200<br>";
 
         break;
 }
